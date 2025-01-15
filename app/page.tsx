@@ -1,4 +1,5 @@
 "use client"
+import { useState, useEffect } from "react"
 import dynamic from "next/dynamic"
 import type { LatLngTuple } from "leaflet"
 import L from "leaflet"
@@ -21,27 +22,48 @@ const TileLayer = dynamic(() => import("react-leaflet").then((mod) => mod.TileLa
 const Marker = dynamic(() => import("react-leaflet").then((mod) => mod.Marker), { ssr: false })
 const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), { ssr: false })
 
-const position: LatLngTuple = [51.505, -0.09]
+const defaultPosition: LatLngTuple = [51.505, -0.09]
 
 export default function Home() {
+	const [position, setPosition] = useState<LatLngTuple | null>(null)
+
+	useEffect(() => {
+		// Use the Geolocation API to get the current position
+		if (navigator.geolocation) {
+			navigator.geolocation.getCurrentPosition(
+				(location) => {
+					const { latitude, longitude } = location.coords
+					setPosition([latitude, longitude]) // Update the state with the current location
+				},
+				(error) => {
+					console.error("Error getting location:", error)
+					setPosition(defaultPosition) // Fallback to a default position
+				}
+			)
+		} else {
+			console.error("Geolocation is not supported by this browser.")
+			setPosition(defaultPosition) // Fallback to a default position
+		}
+	}, [])
+
 	return (
 		<div style={{ width: "100%", height: "100vh" }}>
-			<MapContainer
-				center={position}
-				zoom={13}
-				scrollWheelZoom={false}
-				style={{ width: "100%", height: "100%" }}
-			>
-				<TileLayer
-					attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-					url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-				/>
-				<Marker position={position}>
-					<Popup>
-						A pretty CSS3 popup. <br /> Easily customizable.
-					</Popup>
-				</Marker>
-			</MapContainer>
+			{position && (
+				<MapContainer
+					center={position}
+					zoom={13}
+					scrollWheelZoom={false}
+					style={{ width: "100%", height: "100%" }}
+				>
+					<TileLayer
+						attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+						url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+					/>
+					<Marker position={position}>
+						<Popup>You are here!</Popup>
+					</Marker>
+				</MapContainer>
+			)}
 		</div>
 	)
 }
