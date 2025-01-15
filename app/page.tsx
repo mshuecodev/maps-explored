@@ -4,11 +4,6 @@ import dynamic from "next/dynamic"
 import type { LatLngTuple } from "leaflet"
 import "leaflet/dist/leaflet.css"
 
-// Import marker images
-import markerIcon from "leaflet/dist/images/marker-icon.png"
-import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png"
-import markerShadow from "leaflet/dist/images/marker-shadow.png"
-
 const MapContainer = dynamic(() => import("react-leaflet").then((mod) => mod.MapContainer), { ssr: false })
 const TileLayer = dynamic(() => import("react-leaflet").then((mod) => mod.TileLayer), { ssr: false })
 const Marker = dynamic(() => import("react-leaflet").then((mod) => mod.Marker), { ssr: false })
@@ -20,6 +15,22 @@ const defaultPosition: LatLngTuple = [51.505, -0.09]
 
 export default function Home() {
 	const [position, setPosition] = useState<LatLngTuple | null>(null)
+	const [address, setAddress] = useState<string>("Loading address...")
+
+	async function fetchAddress(lat: number, lon: number) {
+		try {
+			const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`)
+			const data = await response.json()
+			if (data && data.display_name) {
+				setAddress(data.display_name) // Update the address
+			} else {
+				setAddress("Address not found.")
+			}
+		} catch (error) {
+			console.error("Error fetching address:", error)
+			setAddress("Failed to load address.")
+		}
+	}
 
 	useEffect(() => {
 		// Dynamically import Leaflet on the client side
@@ -51,16 +62,19 @@ export default function Home() {
 					(location) => {
 						const { latitude, longitude } = location.coords
 						setPosition([latitude, longitude]) // Update the state with the current location
+						fetchAddress(latitude, longitude) // Fetch the address
 					},
 					(error) => {
 						console.error("Error getting location:", error)
 						setPosition(defaultPosition) // Fallback to a default position
+						fetchAddress(defaultPosition[0], defaultPosition[1]) // Fetch address for the default position
 					},
 					geolocationOptions // Pass the options to improve accuracy
 				)
 			} else {
 				console.error("Geolocation is not supported by this browser.")
 				setPosition(defaultPosition) // Fallback to a default position
+				fetchAddress(defaultPosition[0], defaultPosition[1])
 			}
 		}
 	}, [])
@@ -79,7 +93,7 @@ export default function Home() {
 						url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
 					/>
 					<Marker position={position}>
-						<Popup>You are here!</Popup>
+						<Popup>{address}</Popup>
 					</Marker>
 				</MapContainer>
 			)}
