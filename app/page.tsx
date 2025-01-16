@@ -117,27 +117,37 @@ export default function Home() {
 	return (
 		<div className="relative w-full h-screen">
 			{/* Search bar for destination */}
-			<div className="absolute top-4 left-20 z-[1000] bg-white shadow-lg rounded-lg p-2 flex items-center">
-				<input
-					type="text"
-					value={searchQuery}
-					onChange={(e) => {
-						setSearchQuery(e.target.value)
-						fetchSuggestions(e.target.value)
-					}}
-					placeholder="Search for a location"
-					className="p-2 border border-gray-300 rounded-lg flex-grow text-sm text-gray-800 outline-none focus:ring-2 focus:ring-blue-500"
-				/>
-				<button
-					onClick={handleSearch}
-					className="ml-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-				>
-					Search
-				</button>
+			<div
+				// className="absolute top-4 left-20 z-[1000] bg-white shadow-lg rounded-lg p-2 flex items-center"
+				className="absolute top-4 left-20 z-[1000] bg-white shadow-lg rounded-lg p-2 flex flex-col"
+			>
+				<div className="flex items-center space-x-2">
+					<input
+						type="text"
+						value={searchQuery}
+						onChange={(e) => {
+							setSearchQuery(e.target.value)
+							fetchSuggestions(e.target.value)
+						}}
+						placeholder="Search for a location"
+						// className="p-2 border border-gray-300 rounded-lg flex-grow text-sm text-gray-800 outline-none focus:ring-2 focus:ring-blue-500"
+						className="p-2 border border-gray-300 rounded-lg text-sm text-gray-800 outline-none focus:ring-2 focus:ring-blue-500"
+					/>
+					<button
+						onClick={handleSearch}
+						// className="ml-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+						className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+					>
+						Search
+					</button>
+				</div>
 
 				{/* Suggestions */}
 				{suggestions.length > 0 && (
-					<ul className="mt-2 bg-white border rounded-lg shadow-lg max-h-40 overflow-y-auto">
+					<ul
+						// className="mt-2 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto"
+						className="mt-2 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto"
+					>
 						{suggestions.map((item, index) => (
 							<li
 								key={index}
@@ -149,7 +159,7 @@ export default function Home() {
 										mapRef.current.setView([parseFloat(item.lat), parseFloat(item.lon)], 15, { animate: true })
 									}
 								}}
-								className="p-2 hover:bg-gray-100 cursor-pointer"
+								className="p-2 text-gray-900 hover:bg-gray-200 cursor-pointer"
 							>
 								{item.display_name}
 							</li>
