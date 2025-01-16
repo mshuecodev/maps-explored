@@ -20,11 +20,12 @@ export default function Home() {
 	const [suggestions, setSuggestions] = useState<any[]>([])
 	const [isLoading, setIsLoading] = useState<boolean>(false)
 	const mapRef = useRef<any>(null) // Reference to the map
+	const debounceTimer = useRef(null) // Ref to store the debounce timer
 
 	// Handle the search query input
 	const handleSearch = async () => {
 		if (searchQuery) {
-			const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(searchQuery)}`)
+			const response = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(searchQuery)}`)
 			const data = await response.json()
 			if (data.length > 0) {
 				const { lat, lon, display_name } = data[0]
@@ -65,6 +66,22 @@ export default function Home() {
 		} finally {
 			setIsLoading(false) // Stop loading
 		}
+	}
+
+	// Handle input change with debounce
+	const handleInputChange = (e) => {
+		const value = e.target.value
+		setSearchQuery(value)
+
+		// Clear previous timeout to reset debounce delay
+		if (debounceTimer.current) {
+			clearTimeout(debounceTimer.current)
+		}
+
+		// Set a new timeout to call fetchSuggestions after 500ms delay
+		debounceTimer.current = setTimeout(() => {
+			fetchSuggestions(value)
+		}, 500) // 500ms delay before making the API request
 	}
 
 	async function fetchAddress(lat: number, lon: number) {
@@ -140,10 +157,11 @@ export default function Home() {
 					<input
 						type="text"
 						value={searchQuery}
-						onChange={(e) => {
-							setSearchQuery(e.target.value)
-							fetchSuggestions(e.target.value)
-						}}
+						onChange={handleInputChange} // Handle input change with debounce
+						// onChange={(e) => {
+						// 	setSearchQuery(e.target.value)
+						// 	fetchSuggestions(e.target.value)
+						// }}
 						placeholder="Search for a location"
 						// className="p-2 border border-gray-300 rounded-lg flex-grow text-sm text-gray-800 outline-none focus:ring-2 focus:ring-blue-500"
 						className="p-2 border border-gray-300 rounded-lg text-sm text-gray-800 outline-none focus:ring-2 focus:ring-blue-500"
@@ -166,28 +184,31 @@ export default function Home() {
 				)}
 
 				{/* Suggestions */}
-				{!isLoading && (
+				{suggestions.length > 0 && (
 					<ul className="mt-2 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
-						{suggestions.length > 0 ? (
-							suggestions.map((item, index) => (
-								<li
-									key={index}
-									onClick={() => {
-										setSearchQuery(item.display_name)
-										setPosition([parseFloat(item.lat), parseFloat(item.lon)])
-										setSuggestions([]) // Clear suggestions
-										if (mapRef.current) {
-											mapRef.current.setView([parseFloat(item.lat), parseFloat(item.lon)], 15, { animate: true })
-										}
-									}}
-									className="p-2 text-gray-900 hover:bg-gray-200 cursor-pointer"
-								>
-									{item.display_name}
-								</li>
-							))
-						) : (
-							<li className="p-2 text-gray-500 text-center">No results found</li>
-						)}
+						{suggestions.map((item, index) => (
+							<li
+								key={index}
+								onClick={() => {
+									setSearchQuery(item.display_name)
+									setPosition([parseFloat(item.lat), parseFloat(item.lon)])
+									setSuggestions([]) // Clear suggestions
+									if (mapRef.current) {
+										mapRef.current.setView([parseFloat(item.lat), parseFloat(item.lon)], 15, { animate: true })
+									}
+								}}
+								className="p-2 text-gray-900 hover:bg-gray-200 cursor-pointer"
+							>
+								{item.display_name}
+							</li>
+						))}
+					</ul>
+				)}
+
+				{/* Show message when no suggestions found */}
+				{suggestions.length === 0 && searchQuery && !isLoading && (
+					<ul className="mt-2 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+						<li className="p-2 text-gray-500 text-center">No location found</li>
 					</ul>
 				)}
 			</div>
