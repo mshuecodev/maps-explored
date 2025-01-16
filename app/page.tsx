@@ -50,7 +50,13 @@ export default function Home() {
 
 		setIsLoading(true) // Start loading
 		try {
-			const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+			const encodedQuery = query.replace(/ /g, "+") // Replace spaces with '+'
+
+			const response = await fetch(`https://nominatim.openstreetmap.org/search.php?q=${encodedQuery}&format=jsonv2`)
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`)
+			}
+
 			const data = await response.json()
 			setSuggestions(data) // Update suggestions
 		} catch (error) {
