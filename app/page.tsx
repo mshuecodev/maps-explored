@@ -134,30 +134,29 @@ export default function Home() {
 				>
 					Search
 				</button>
-			</div>
 
-        {/* Suggestions */}
-        {suggestions.length > 0 && (
-                    <ul className="mt-2 bg-white border rounded-lg shadow-lg max-h-40 overflow-y-auto">
-                        {suggestions.map((item, index) => (
-                            <li
-                                key={index}
-                                onClick={() => {
-                                    setSearchQuery(item.display_name)
-                                    setPosition([parseFloat(item.lat), parseFloat(item.lon)])
-                                    setSuggestions([]) // Clear suggestions
-                                    if (mapRef.current) {
-                                        mapRef.current.setView([parseFloat(item.lat), parseFloat(item.lon)], 15, { animate: true })
-                                    }
-                                }}
-                                className="p-2 hover:bg-gray-100 cursor-pointer"
-                            >
-                                {item.display_name}
-                            </li>
-                        ))}
-                    </ul>
-                )}
-            </div>
+				{/* Suggestions */}
+				{suggestions.length > 0 && (
+					<ul className="mt-2 bg-white border rounded-lg shadow-lg max-h-40 overflow-y-auto">
+						{suggestions.map((item, index) => (
+							<li
+								key={index}
+								onClick={() => {
+									setSearchQuery(item.display_name)
+									setPosition([parseFloat(item.lat), parseFloat(item.lon)])
+									setSuggestions([]) // Clear suggestions
+									if (mapRef.current) {
+										mapRef.current.setView([parseFloat(item.lat), parseFloat(item.lon)], 15, { animate: true })
+									}
+								}}
+								className="p-2 hover:bg-gray-100 cursor-pointer"
+							>
+								{item.display_name}
+							</li>
+						))}
+					</ul>
+				)}
+			</div>
 
 			{position && (
 				<MapContainer
@@ -166,6 +165,7 @@ export default function Home() {
 					zoom={15} // Increase zoom level for better accuracy
 					scrollWheelZoom={false}
 					className="w-full h-full"
+					ref={mapRef}
 				>
 					<TileLayer
 						attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
