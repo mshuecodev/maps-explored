@@ -20,7 +20,7 @@ export default function Home() {
 	const [suggestions, setSuggestions] = useState<any[]>([])
 	const [isLoading, setIsLoading] = useState<boolean>(false)
 	const mapRef = useRef<any>(null) // Reference to the map
-	const debounceTimer = useRef(null) // Ref to store the debounce timer
+	const debounceTimer = useRef<NodeJS.Timeout>(null) // Ref to store the debounce timer
 
 	// Handle the search query input
 	const handleSearch = async () => {
@@ -69,7 +69,7 @@ export default function Home() {
 	}
 
 	// Handle input change with debounce
-	const handleInputChange = (e) => {
+	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const value = e.target.value
 		setSearchQuery(value)
 
