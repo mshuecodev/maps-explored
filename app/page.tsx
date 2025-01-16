@@ -136,6 +136,29 @@ export default function Home() {
 				</button>
 			</div>
 
+        {/* Suggestions */}
+        {suggestions.length > 0 && (
+                    <ul className="mt-2 bg-white border rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                        {suggestions.map((item, index) => (
+                            <li
+                                key={index}
+                                onClick={() => {
+                                    setSearchQuery(item.display_name)
+                                    setPosition([parseFloat(item.lat), parseFloat(item.lon)])
+                                    setSuggestions([]) // Clear suggestions
+                                    if (mapRef.current) {
+                                        mapRef.current.setView([parseFloat(item.lat), parseFloat(item.lon)], 15, { animate: true })
+                                    }
+                                }}
+                                className="p-2 hover:bg-gray-100 cursor-pointer"
+                            >
+                                {item.display_name}
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
+
 			{position && (
 				<MapContainer
 					key={position?.join(",")} // Use the position to generate a unique key
