@@ -18,6 +18,7 @@ export default function Home() {
 	const [address, setAddress] = useState<string>("Loading address...")
 	const [searchQuery, setSearchQuery] = useState<string>("")
 	const [suggestions, setSuggestions] = useState<any[]>([])
+	const [isLoading, setIsLoading] = useState<boolean>(false)
 	const mapRef = useRef<any>(null) // Reference to the map
 
 	// Handle the search query input
@@ -42,13 +43,21 @@ export default function Home() {
 	}
 
 	const fetchSuggestions = async (query: string) => {
-		if (query.length > 2) {
-			// Fetch suggestions for 3+ characters
+		if (!query) {
+			setSuggestions([])
+			return
+		}
+
+		setIsLoading(true) // Start loading
+		try {
 			const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
 			const data = await response.json()
-			setSuggestions(data)
-		} else {
-			setSuggestions([])
+			setSuggestions(data) // Update suggestions
+		} catch (error) {
+			console.error("Error fetching suggestions:", error)
+			setSuggestions([]) // Handle error by clearing suggestions
+		} finally {
+			setIsLoading(false) // Stop loading
 		}
 	}
 
@@ -142,28 +151,37 @@ export default function Home() {
 					</button>
 				</div>
 
+				{/* Loading Spinner */}
+				{isLoading && (
+					<div className="mt-2 flex items-center justify-center text-gray-500">
+						<div className="animate-spin rounded-full h-5 w-5 border-t-2 border-blue-500 border-opacity-75"></div>
+						<span className="ml-2 text-sm">Loading...</span>
+					</div>
+				)}
+
 				{/* Suggestions */}
-				{suggestions.length > 0 && (
-					<ul
-						// className="mt-2 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto"
-						className="mt-2 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto"
-					>
-						{suggestions.map((item, index) => (
-							<li
-								key={index}
-								onClick={() => {
-									setSearchQuery(item.display_name)
-									setPosition([parseFloat(item.lat), parseFloat(item.lon)])
-									setSuggestions([]) // Clear suggestions
-									if (mapRef.current) {
-										mapRef.current.setView([parseFloat(item.lat), parseFloat(item.lon)], 15, { animate: true })
-									}
-								}}
-								className="p-2 text-gray-900 hover:bg-gray-200 cursor-pointer"
-							>
-								{item.display_name}
-							</li>
-						))}
+				{!isLoading && (
+					<ul className="mt-2 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+						{suggestions.length > 0 ? (
+							suggestions.map((item, index) => (
+								<li
+									key={index}
+									onClick={() => {
+										setSearchQuery(item.display_name)
+										setPosition([parseFloat(item.lat), parseFloat(item.lon)])
+										setSuggestions([]) // Clear suggestions
+										if (mapRef.current) {
+											mapRef.current.setView([parseFloat(item.lat), parseFloat(item.lon)], 15, { animate: true })
+										}
+									}}
+									className="p-2 text-gray-900 hover:bg-gray-200 cursor-pointer"
+								>
+									{item.display_name}
+								</li>
+							))
+						) : (
+							<li className="p-2 text-gray-500 text-center">No results found</li>
+						)}
 					</ul>
 				)}
 			</div>
