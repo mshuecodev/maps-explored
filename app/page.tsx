@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import dynamic from "next/dynamic"
 import type { LatLngTuple } from "leaflet"
 import "leaflet/dist/leaflet.css"
@@ -16,6 +16,41 @@ const defaultPosition: LatLngTuple = [51.505, -0.09]
 export default function Home() {
 	const [position, setPosition] = useState<LatLngTuple | null>(null)
 	const [address, setAddress] = useState<string>("Loading address...")
+	const [searchQuery, setSearchQuery] = useState<string>("")
+	const [suggestions, setSuggestions] = useState<any[]>([])
+	const mapRef = useRef<any>(null) // Reference to the map
+
+	// Handle the search query input
+	const handleSearch = async () => {
+		if (searchQuery) {
+			const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(searchQuery)}`)
+			const data = await response.json()
+			if (data.length > 0) {
+				const { lat, lon, display_name } = data[0]
+				const newPosition: [number, number] = [parseFloat(lat), parseFloat(lon)]
+				setPosition(newPosition)
+				setAddress(display_name)
+
+				// Animate the map to the new position
+				if (mapRef.current) {
+					mapRef.current.setView(newPosition, 15, { animate: true })
+				}
+			} else {
+				alert("Location not found.")
+			}
+		}
+	}
+
+	const fetchSuggestions = async (query: string) => {
+		if (query.length > 2) {
+			// Fetch suggestions for 3+ characters
+			const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+			const data = await response.json()
+			setSuggestions(data)
+		} else {
+			setSuggestions([])
+		}
+	}
 
 	async function fetchAddress(lat: number, lon: number) {
 		try {
@@ -80,13 +115,34 @@ export default function Home() {
 	}, [])
 
 	return (
-		<div style={{ width: "100%", height: "100vh" }}>
+		<div className="relative w-full h-screen">
+			{/* Search bar for destination */}
+			<div className="absolute top-4 left-20 z-[1000] bg-white shadow-lg rounded-lg p-2 flex items-center">
+				<input
+					type="text"
+					value={searchQuery}
+					onChange={(e) => {
+						setSearchQuery(e.target.value)
+						fetchSuggestions(e.target.value)
+					}}
+					placeholder="Search for a location"
+					className="p-2 border border-gray-300 rounded-lg flex-grow text-sm text-gray-800 outline-none focus:ring-2 focus:ring-blue-500"
+				/>
+				<button
+					onClick={handleSearch}
+					className="ml-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+				>
+					Search
+				</button>
+			</div>
+
 			{position && (
 				<MapContainer
+					key={position?.join(",")} // Use the position to generate a unique key
 					center={position}
 					zoom={15} // Increase zoom level for better accuracy
 					scrollWheelZoom={false}
-					style={{ width: "100%", height: "100%" }}
+					className="w-full h-full"
 				>
 					<TileLayer
 						attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
