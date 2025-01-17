@@ -189,7 +189,6 @@ export default function Home() {
 		// Dynamically import Leaflet on the client side
 		async function loadLeaflet() {
 			const leaflet = await import("leaflet")
-			await import("leaflet-routing-machine") // Import routing machine
 			L = leaflet // Assign to the lazy-loaded variable
 
 			// Fix the default marker icon paths
@@ -234,24 +233,29 @@ export default function Home() {
 	}, [])
 
 	useEffect(() => {
-		if (mapRef.current) {
-			const mapInstance = mapRef.current
-
-			// Set zoom level and attach event listeners
-			setZoomLevel(mapInstance.getZoom())
-
-			mapInstance.on("zoomend", () => {
-				setZoomLevel(mapInstance.getZoom())
-			})
-
-			// Center and fit bounds if currentLocation and destination are available
-			if (currentLocation && destination) {
-				const bounds = L.latLngBounds([currentLocation, destination])
-				mapInstance.fitBounds(bounds, { padding: [50, 50] })
-			} else if (currentLocation) {
-				mapInstance.setView(currentLocation, zoomLevel, { animate: true })
-			}
+		if (mapRef.current && currentLocation && destination) {
+			const bounds = L.latLngBounds([currentLocation, destination])
+			mapRef.current.fitBounds(bounds, { padding: [50, 50] }) // Adjust padding as needed
 		}
+
+		// if (mapRef.current) {
+		// 	const mapInstance = mapRef.current
+
+		// 	// Set zoom level and attach event listeners
+		// 	setZoomLevel(mapInstance.getZoom())
+
+		// 	mapInstance.on("zoomend", () => {
+		// 		setZoomLevel(mapInstance.getZoom())
+		// 	})
+
+		// 	// Center and fit bounds if currentLocation and destination are available
+		// 	if (currentLocation && destination) {
+		// 		const bounds = L.latLngBounds([currentLocation, destination])
+		// 		mapInstance.fitBounds(bounds, { padding: [50, 50] })
+		// 	} else if (currentLocation) {
+		// 		mapInstance.setView(currentLocation, zoomLevel, { animate: true })
+		// 	}
+		// }
 	}, [currentLocation, destination]) // Run effect whenever markers change
 
 	return (
