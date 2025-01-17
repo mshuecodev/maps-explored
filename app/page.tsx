@@ -14,12 +14,17 @@ let L: any // Declare Leaflet as a lazy-loaded variable
 const defaultPosition: LatLngTuple = [51.505, -0.09]
 
 export default function Home() {
-	const [position, setPosition] = useState<LatLngTuple | null>(null)
+	const [currentLocation, setCurrentLocation] = useState<LatLngTuple | null>(null)
 	const [destination, setDestination] = useState<LatLngTuple | null>(null)
 
 	const [address, setAddress] = useState<string>("Loading address...")
-	const [searchQuery, setSearchQuery] = useState<string>("")
-	const [suggestions, setSuggestions] = useState<any[]>([])
+
+	const [currentInput, setCurrentInput] = useState<string>("")
+	const [destinationInput, setDestinationInput] = useState<string>("")
+
+	const [currentSuggestions, setCurrentSuggestions] = useState<any[]>([])
+	const [destinationSuggestions, setDestinationSuggestions] = useState<any[]>([])
+
 	const [isLoading, setIsLoading] = useState<boolean>(false)
 	const [zoomLevel, setZoomLevel] = useState<number>(15)
 
@@ -29,13 +34,13 @@ export default function Home() {
 
 	// Handle the search query input
 	const handleSearch = async () => {
-		if (searchQuery) {
-			const response = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(searchQuery)}`)
+		if (currentInput) {
+			const response = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(currentInput)}`)
 			const data = await response.json()
 			if (data.length > 0) {
 				const { lat, lon, display_name } = data[0]
 				const newPosition: [number, number] = [parseFloat(lat), parseFloat(lon)]
-				setPosition(newPosition)
+				setCurrentLocation(newPosition)
 				setAddress(display_name)
 
 				// Animate the map to the new position
@@ -48,9 +53,10 @@ export default function Home() {
 		}
 	}
 
-	const fetchSuggestions = async (query: string) => {
+	const fetchSuggestions = async (query: string, isCurrent: boolean) => {
 		if (!query) {
-			setSuggestions([])
+			if (isCurrent) setCurrentSuggestions([])
+			else setDestinationSuggestions([])
 			return
 		}
 
@@ -64,20 +70,46 @@ export default function Home() {
 			}
 
 			const data = await response.json()
-			setSuggestions(data) // Update suggestions
+			if (isCurrent) {
+				setCurrentSuggestions(data)
+			} else {
+				setDestinationSuggestions(data)
+			}
 		} catch (error) {
 			console.error("Error fetching suggestions:", error)
-			setSuggestions([]) // Handle error by clearing suggestions
+			if (isCurrent) {
+				setCurrentSuggestions([])
+			} else {
+				setDestinationSuggestions([])
+			}
 		} finally {
 			setIsLoading(false) // Stop loading
 		}
 	}
 
-	// Handle input change with debounce
-	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const value = e.target.value
-		setSearchQuery(value)
+	// select location
+	const handleLocationSelect = (item: any, isCurrent: boolean) => {
+		const newPosition: LatLngTuple = [parseFloat(item.lat), parseFloat(item.lon)]
 
+		if (isCurrent) {
+			setCurrentLocation(newPosition)
+			setCurrentInput(item.display_name)
+			setCurrentSuggestions([])
+		} else {
+			setDestination(newPosition)
+			setDestinationInput(item.display_name)
+			setDestinationSuggestions([])
+		}
+
+		// Recenter map to current location if the current location is selected
+		if (isCurrent && mapRef.current) {
+			mapRef.current.setView(newPosition, zoomLevel, { animate: true })
+		}
+	}
+
+	// Handle input change with debounce
+	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>, isCurrent: boolean) => {
+		const value = e.target.value
 		// Clear previous timeout to reset debounce delay
 		if (debounceTimer.current) {
 			clearTimeout(debounceTimer.current)
@@ -85,8 +117,11 @@ export default function Home() {
 
 		// Set a new timeout to call fetchSuggestions after 500ms delay
 		debounceTimer.current = setTimeout(() => {
-			fetchSuggestions(value)
+			fetchSuggestions(value, isCurrent)
 		}, 500) // 500ms delay before making the API request
+
+		if (isCurrent) setCurrentInput(value)
+		else setDestinationInput(value)
 	}
 
 	async function fetchAddress(lat: number, lon: number) {
@@ -106,19 +141,20 @@ export default function Home() {
 
 	// Function to recenter the map
 	const recenterMap = () => {
-		if (mapRef.current && position) {
-			mapRef.current.setView(position, zoomLevel, { animate: true })
+		if (mapRef.current && currentLocation) {
+			mapRef.current.setView(currentLocation, zoomLevel, { animate: true })
 		}
 	}
 
 	const startNavigation = () => {
-		if (mapRef.current && position && destination) {
+		if (mapRef.current && currentLocation && destination) {
+			// Remove existing route if any
 			if (routingControlRef.current) {
 				mapRef.current.removeControl(routingControlRef.current) // Remove any existing route
 			}
 
 			routingControlRef.current = L.Routing.control({
-				waypoints: [L.latLng(position[0], position[1]), L.latLng(destination[0], destination[1])],
+				waypoints: [L.latLng(currentLocation[0], currentLocation[1]), L.latLng(destination[0], destination[1])],
 				routeWhileDragging: true,
 				show: true,
 				lineOptions: { styles: [{ color: "blue", weight: 4 }] }
@@ -155,19 +191,19 @@ export default function Home() {
 				navigator.geolocation.getCurrentPosition(
 					(location) => {
 						const { latitude, longitude } = location.coords
-						setPosition([latitude, longitude]) // Update the state with the current location
+						setCurrentLocation([latitude, longitude]) // Update the state with the current location
 						fetchAddress(latitude, longitude) // Fetch the address
 					},
 					(error) => {
 						console.error("Error getting location:", error)
-						setPosition(defaultPosition) // Fallback to a default position
+						setCurrentLocation(defaultPosition) // Fallback to a default position
 						fetchAddress(defaultPosition[0], defaultPosition[1]) // Fetch address for the default position
 					},
 					geolocationOptions // Pass the options to improve accuracy
 				)
 			} else {
 				console.error("Geolocation is not supported by this browser.")
-				setPosition(defaultPosition) // Fallback to a default position
+				setCurrentLocation(defaultPosition) // Fallback to a default position
 				fetchAddress(defaultPosition[0], defaultPosition[1])
 			}
 		}
@@ -180,32 +216,23 @@ export default function Home() {
 				<div className="flex items-center space-x-2">
 					<input
 						type="text"
-						value={searchQuery}
-						onChange={handleInputChange} // Handle input change with debounce
-						placeholder="Search for a location"
+						value={currentInput}
+						onChange={(e) => handleInputChange(e, true)} //value, current location
+						placeholder="Search current location"
 						className="p-2 border border-gray-300 rounded-lg text-sm text-gray-800 outline-none focus:ring-2 focus:ring-blue-500"
 					/>
-					{/* <button
-						onClick={handleSearch}
-						className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-					>
-						Search
-					</button> */}
 				</div>
 
 				<div className="flex items-center space-x-2">
 					{/* Destination Input */}
 					<input
 						type="text"
-						placeholder="Enter destination"
-						onChange={(e) => {
-							const [lat, lon] = e.target.value.split(",").map((v) => parseFloat(v.trim()))
-							if (!isNaN(lat) && !isNaN(lon)) {
-								setDestination([lat, lon])
-							}
-						}}
+						placeholder="Search destination"
+						value={destinationInput}
+						onChange={(e) => handleInputChange(e, false)}
 						className="p-2 border border-gray-300 rounded-lg text-sm text-gray-800 outline-none focus:ring-2 focus:ring-blue-500"
 					/>
+
 					<button
 						onClick={startNavigation}
 						className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
@@ -214,6 +241,34 @@ export default function Home() {
 						Start Navigation
 					</button>
 				</div>
+
+				{currentSuggestions.length > 0 && !isLoading && (
+					<ul className="mt-2 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+						{currentSuggestions.map((item, index) => (
+							<li
+								key={index}
+								onClick={() => handleLocationSelect(item, true)}
+								className="p-2 text-gray-900 hover:bg-gray-200 cursor-pointer"
+							>
+								{item.display_name}
+							</li>
+						))}
+					</ul>
+				)}
+
+				{destinationSuggestions.length > 0 && !isLoading && (
+					<ul className="mt-2 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+						{destinationSuggestions.map((item, index) => (
+							<li
+								key={index}
+								onClick={() => handleLocationSelect(item, false)}
+								className="p-2 text-gray-900 hover:bg-gray-200 cursor-pointer"
+							>
+								{item.display_name}
+							</li>
+						))}
+					</ul>
+				)}
 
 				{/* Add a recenter button */}
 				<button
@@ -231,43 +286,18 @@ export default function Home() {
 					</div>
 				)}
 
-				{/* Suggestions */}
-				{suggestions.length > 0 && (
-					<ul className="mt-2 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
-						{suggestions.map((item, index) => (
-							<li
-								key={index}
-								onClick={() => {
-									const newPos: LatLngTuple = [parseFloat(item.lat), parseFloat(item.lon)]
-
-									setSearchQuery(item.display_name)
-									setPosition(newPos)
-									setAddress(item.display_name)
-									setSuggestions([]) // Clear suggestions
-									if (mapRef.current) {
-										mapRef.current.setView(newPos, zoomLevel, { animate: true })
-									}
-								}}
-								className="p-2 text-gray-900 hover:bg-gray-200 cursor-pointer"
-							>
-								{item.display_name}
-							</li>
-						))}
-					</ul>
-				)}
-
 				{/* Show message when no suggestions found */}
-				{suggestions.length === 0 && searchQuery && !isLoading && (
+				{currentSuggestions.length === 0 && currentInput && !isLoading && (
 					<ul className="mt-2 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
 						<li className="p-2 text-gray-500 text-center">No location found</li>
 					</ul>
 				)}
 			</div>
 
-			{position && (
+			{currentLocation && (
 				<MapContainer
-					// key={position?.join(",")} // Use the position to generate a unique key
-					center={position}
+					// key={currentLocation?.join(",")} // Use the currentLocation to generate a unique key
+					center={currentLocation}
 					zoom={zoomLevel} // Increase zoom level for better accuracy
 					scrollWheelZoom={true}
 					className="w-full h-full"
@@ -283,21 +313,42 @@ export default function Home() {
 						attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 						url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
 					/>
+					{/* Current Location Marker */}
 					<Marker
-						position={position}
+						position={currentLocation}
 						draggable={true}
 						eventHandlers={{
 							dragend: (event) => {
 								const marker = event.target
 								const newPos = marker.getLatLng()
 
-								setPosition([newPos.lat, newPos.lng])
+								setCurrentLocation([newPos.lat, newPos.lng])
 								fetchAddress(newPos.lat, newPos.lng)
 							}
 						}}
 					>
 						<Popup>{address}</Popup>
 					</Marker>
+
+					{/* Current Destination Marker */}
+
+					{destination && (
+						<Marker
+							position={destination}
+							draggable={true}
+							eventHandlers={{
+								dragend: (event) => {
+									const marker = event.target
+									const newPos = marker.getLatLng()
+
+									setDestination([newPos.lat, newPos.lng])
+									fetchAddress(newPos.lat, newPos.lng)
+								}
+							}}
+						>
+							<Popup>{address}</Popup>
+						</Marker>
+					)}
 				</MapContainer>
 			)}
 		</div>
