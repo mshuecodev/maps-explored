@@ -332,21 +332,6 @@ export default function Home() {
 					scrollWheelZoom={true}
 					className="w-full h-full"
 					ref={mapRef}
-					// whenReady={(event: any) => {
-					// 	setZoomLevel(event.target.getZoom())
-					// 	event.target.on("zoomend", () => {
-					// 		setZoomLevel(event.target.getZoom())
-					// 	})
-
-					// 	// Center and fit bounds if currentLocation and destination are available
-					// 	if (currentLocation && destination) {
-					// 		const bounds = L.latLngBounds([currentLocation, destination])
-					// 		event.target.fitBounds(bounds, { padding: [50, 50] })
-					// 	} else if (currentLocation) {
-					// 		// Center to currentLocation if only one marker is set
-					// 		event.target.setView(currentLocation, zoomLevel, { animate: true })
-					// 	}
-					// }}
 				>
 					<TileLayer
 						attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
