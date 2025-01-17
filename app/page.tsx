@@ -132,8 +132,10 @@ export default function Home() {
 			fetchSuggestions(value, isCurrent)
 		}, 500) // 500ms delay before making the API request
 
-		if (isCurrent) setCurrentInput(value)
-		else setDestinationInput(value)
+		if (isCurrent) {
+			setCurrentInput(value)
+			setDestinationInput("")
+		} else setDestinationInput(value)
 	}
 
 	async function fetchAddress(lat: number, lon: number) {
