@@ -102,8 +102,17 @@ export default function Home() {
 		}
 
 		// Recenter map to current location if the current location is selected
-		if (isCurrent && mapRef.current) {
-			mapRef.current.setView(newPosition, zoomLevel, { animate: true })
+		// if (isCurrent && mapRef.current) {
+		// 	mapRef.current.setView(newPosition, zoomLevel, { animate: true })
+		// }
+
+		// Fit bounds to show both markers
+		if (mapRef.current) {
+			const bounds = L.latLngBounds([])
+			if (currentLocation) bounds.extend(currentLocation)
+			if (isCurrent) bounds.extend(newPosition) // Add current marker to bounds
+			if (!isCurrent && destination) bounds.extend(destination) // Add destination marker to bounds
+			mapRef.current.fitBounds(bounds, { padding: [50, 50] }) // Adjust padding as needed
 		}
 	}
 
@@ -209,6 +218,27 @@ export default function Home() {
 		}
 	}, [])
 
+	useEffect(() => {
+		if (mapRef.current) {
+			const mapInstance = mapRef.current
+
+			// Set zoom level and attach event listeners
+			setZoomLevel(mapInstance.getZoom())
+
+			mapInstance.on("zoomend", () => {
+				setZoomLevel(mapInstance.getZoom())
+			})
+
+			// Center and fit bounds if currentLocation and destination are available
+			if (currentLocation && destination) {
+				const bounds = L.latLngBounds([currentLocation, destination])
+				mapInstance.fitBounds(bounds, { padding: [50, 50] })
+			} else if (currentLocation) {
+				mapInstance.setView(currentLocation, zoomLevel, { animate: true })
+			}
+		}
+	}, [currentLocation, destination]) // Run effect whenever markers change
+
 	return (
 		<div className="relative w-full h-screen">
 			{/* Search bar for destination */}
@@ -302,12 +332,21 @@ export default function Home() {
 					scrollWheelZoom={true}
 					className="w-full h-full"
 					ref={mapRef}
-					whenReady={(event: any) => {
-						setZoomLevel(event.target.getZoom())
-						event.target.on("zoomend", () => {
-							setZoomLevel(event.target.getZoom())
-						})
-					}}
+					// whenReady={(event: any) => {
+					// 	setZoomLevel(event.target.getZoom())
+					// 	event.target.on("zoomend", () => {
+					// 		setZoomLevel(event.target.getZoom())
+					// 	})
+
+					// 	// Center and fit bounds if currentLocation and destination are available
+					// 	if (currentLocation && destination) {
+					// 		const bounds = L.latLngBounds([currentLocation, destination])
+					// 		event.target.fitBounds(bounds, { padding: [50, 50] })
+					// 	} else if (currentLocation) {
+					// 		// Center to currentLocation if only one marker is set
+					// 		event.target.setView(currentLocation, zoomLevel, { animate: true })
+					// 	}
+					// }}
 				>
 					<TileLayer
 						attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
