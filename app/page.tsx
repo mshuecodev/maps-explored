@@ -9,6 +9,7 @@ const TileLayer = dynamic(() => import("react-leaflet").then((mod) => mod.TileLa
 const Marker = dynamic(() => import("react-leaflet").then((mod) => mod.Marker), { ssr: false })
 const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), { ssr: false })
 const Polyline = dynamic(() => import("react-leaflet").then((mod) => mod.Polyline), { ssr: false })
+import { decodePolyline } from "@/app/utils/decodePolyline"
 
 let L: any // Declare Leaflet as a lazy-loaded variable
 
@@ -17,6 +18,7 @@ const defaultPosition: LatLngTuple = [51.505, -0.09]
 export default function Home() {
 	const [currentLocation, setCurrentLocation] = useState<LatLngTuple | null>(null)
 	const [destination, setDestination] = useState<LatLngTuple | null>(null)
+	const [route, setRoute] = useState<any>(null)
 
 	const [address, setAddress] = useState<string>("Loading address...")
 
@@ -232,11 +234,33 @@ export default function Home() {
 		}
 	}, [])
 
+	async function fetchRoute() {
+		if (currentLocation && destination) {
+			try {
+				const url = `https://router.project-osrm.org/route/v1/driving/${currentLocation[1]},${currentLocation[0]};${destination[1]},${destination[0]}?overview=full&geometries=polyline`
+				const response = await fetch(url)
+				const data = await response.json()
+
+				if (data.routes && data.routes.length > 0) {
+					// Decode the polyline geometry
+					const routeCoordinates = decodePolyline(data.routes[0].geometry)
+					setRoute(routeCoordinates)
+				} else {
+					console.error("No routes found")
+				}
+			} catch (error) {
+				console.error("Error fetching route:", error)
+			}
+		}
+	}
+
 	useEffect(() => {
 		if (mapRef.current && currentLocation && destination) {
 			const bounds = L.latLngBounds([currentLocation, destination])
 			mapRef.current.fitBounds(bounds, { padding: [50, 50] }) // Adjust padding as needed
 		}
+
+		fetchRoute()
 
 		// if (mapRef.current) {
 		// 	const mapInstance = mapRef.current
@@ -261,7 +285,7 @@ export default function Home() {
 	return (
 		<div className="relative w-full h-screen">
 			{/* Search bar for destination */}
-			<div className="absolute top-4 left-20 z-[1000] bg-white shadow-lg rounded-lg p-2 flex flex-col">
+			<div className="absolute top-4 left-20 z-[1000] bg-white shadow-lg rounded-lg p-2 flex flex-col space-y-2">
 				<div className="flex items-center space-x-2">
 					<input
 						type="text"
@@ -273,7 +297,6 @@ export default function Home() {
 				</div>
 
 				<div className="flex items-center space-x-2">
-					{/* Destination Input */}
 					<input
 						type="text"
 						placeholder="Search destination"
@@ -282,13 +305,13 @@ export default function Home() {
 						className="p-2 border border-gray-300 rounded-lg text-sm text-gray-800 outline-none focus:ring-2 focus:ring-blue-500"
 					/>
 
-					<button
+					{/* <button
 						onClick={startNavigation}
 						className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
 						disabled={!destination}
 					>
 						Start Navigation
-					</button>
+					</button> */}
 				</div>
 
 				{currentSuggestions.length > 0 && !isLoading && (
@@ -394,13 +417,13 @@ export default function Home() {
 					)}
 
 					{/* Polyline for Line Between Locations */}
-					{/* {currentLocation && destination && (
+					{route && (
 						<Polyline
-							positions={[currentLocation, destination]} // Array of coordinates
-							color="blue" // Line color
+							positions={route} // Directly use decoded route coordinates
+							color="red" // Line color
 							weight={4} // Line weight
 						/>
-					)} */}
+					)}
 				</MapContainer>
 			)}
 		</div>
