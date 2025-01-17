@@ -21,6 +21,7 @@ export default function Home() {
 	const [isLoading, setIsLoading] = useState<boolean>(false)
 	const mapRef = useRef<any>(null) // Reference to the map
 	const debounceTimer = useRef<NodeJS.Timeout>(null) // Ref to store the debounce timer
+	const [zoomLevel, setZoomLevel] = useState<number>(15)
 
 	// Handle the search query input
 	const handleSearch = async () => {
@@ -181,12 +182,14 @@ export default function Home() {
 							<li
 								key={index}
 								onClick={() => {
+									const newPos: LatLngTuple = [parseFloat(item.lat), parseFloat(item.lon)]
+
 									setSearchQuery(item.display_name)
-									setPosition([parseFloat(item.lat), parseFloat(item.lon)])
+									setPosition(newPos)
 									setAddress(item.display_name)
 									setSuggestions([]) // Clear suggestions
 									if (mapRef.current) {
-										mapRef.current.setView([parseFloat(item.lat), parseFloat(item.lon)], 15, { animate: true })
+										mapRef.current.setView(newPos, zoomLevel, { animate: true })
 									}
 								}}
 								className="p-2 text-gray-900 hover:bg-gray-200 cursor-pointer"
@@ -209,10 +212,16 @@ export default function Home() {
 				<MapContainer
 					key={position?.join(",")} // Use the position to generate a unique key
 					center={position}
-					zoom={15} // Increase zoom level for better accuracy
-					scrollWheelZoom={false}
+					zoom={zoomLevel} // Increase zoom level for better accuracy
+					scrollWheelZoom={true}
 					className="w-full h-full"
 					ref={mapRef}
+					whenReady={(event: any) => {
+						setZoomLevel(event.target.getZoom())
+						event.target.on("zoomend", () => {
+							setZoomLevel(event.target.getZoom())
+						})
+					}}
 				>
 					<TileLayer
 						attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
