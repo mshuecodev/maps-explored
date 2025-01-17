@@ -100,6 +100,13 @@ export default function Home() {
 		}
 	}
 
+	// Function to recenter the map
+	const recenterMap = () => {
+		if (mapRef.current && position) {
+			mapRef.current.setView(position, zoomLevel, { animate: true })
+		}
+	}
+
 	useEffect(() => {
 		// Dynamically import Leaflet on the client side
 		async function loadLeaflet() {
@@ -166,6 +173,14 @@ export default function Home() {
 						Search
 					</button>
 				</div>
+
+				{/* Add a recenter button */}
+				<button
+					onClick={recenterMap}
+					className="mt-4 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+				>
+					Recenter Map
+				</button>
 
 				{/* Loading Spinner */}
 				{isLoading && (
