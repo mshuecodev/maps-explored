@@ -8,6 +8,7 @@ const MapContainer = dynamic(() => import("react-leaflet").then((mod) => mod.Map
 const TileLayer = dynamic(() => import("react-leaflet").then((mod) => mod.TileLayer), { ssr: false })
 const Marker = dynamic(() => import("react-leaflet").then((mod) => mod.Marker), { ssr: false })
 const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), { ssr: false })
+const Polyline = dynamic(() => import("react-leaflet").then((mod) => mod.Polyline), { ssr: false })
 
 let L: any // Declare Leaflet as a lazy-loaded variable
 
@@ -156,18 +157,31 @@ export default function Home() {
 	}
 
 	const startNavigation = () => {
-		if (mapRef.current && currentLocation && destination) {
-			// Remove existing route if any
-			if (routingControlRef.current) {
-				mapRef.current.removeControl(routingControlRef.current) // Remove any existing route
-			}
+		if (!L || !L.Routing || !L.Routing.control) {
+			console.error("Leaflet Routing Machine is not loaded.")
+			return
+		}
 
+		if (!mapRef.current || !currentLocation || !destination) {
+			console.error("Map reference or locations are not set")
+			return
+		}
+
+		// Check if routingControlRef.current exists
+		if (routingControlRef.current) {
+			mapRef.current.removeControl(routingControlRef.current) // Remove existing route if any
+			routingControlRef.current = null
+		}
+
+		try {
 			routingControlRef.current = L.Routing.control({
 				waypoints: [L.latLng(currentLocation[0], currentLocation[1]), L.latLng(destination[0], destination[1])],
 				routeWhileDragging: true,
 				show: true,
 				lineOptions: { styles: [{ color: "blue", weight: 4 }] }
 			}).addTo(mapRef.current) // Add the routing control to the map
+		} catch (error) {
+			console.error("Error setting up routing:", error)
 		}
 	}
 
@@ -175,6 +189,7 @@ export default function Home() {
 		// Dynamically import Leaflet on the client side
 		async function loadLeaflet() {
 			const leaflet = await import("leaflet")
+			await import("leaflet-routing-machine") // Import routing machine
 			L = leaflet // Assign to the lazy-loaded variable
 
 			// Fix the default marker icon paths
@@ -327,7 +342,7 @@ export default function Home() {
 			{currentLocation && (
 				<MapContainer
 					// key={currentLocation?.join(",")} // Use the currentLocation to generate a unique key
-					center={currentLocation}
+					center={currentLocation || defaultPosition}
 					zoom={zoomLevel} // Increase zoom level for better accuracy
 					scrollWheelZoom={true}
 					className="w-full h-full"
@@ -373,6 +388,15 @@ export default function Home() {
 							<Popup>{address}</Popup>
 						</Marker>
 					)}
+
+					{/* Polyline for Line Between Locations */}
+					{/* {currentLocation && destination && (
+						<Polyline
+							positions={[currentLocation, destination]} // Array of coordinates
+							color="blue" // Line color
+							weight={4} // Line weight
+						/>
+					)} */}
 				</MapContainer>
 			)}
 		</div>
