@@ -210,7 +210,7 @@ export default function Home() {
 
 			{position && (
 				<MapContainer
-					key={position?.join(",")} // Use the position to generate a unique key
+					// key={position?.join(",")} // Use the position to generate a unique key
 					center={position}
 					zoom={zoomLevel} // Increase zoom level for better accuracy
 					scrollWheelZoom={true}
@@ -234,6 +234,7 @@ export default function Home() {
 							dragend: (event) => {
 								const marker = event.target
 								const newPos = marker.getLatLng()
+
 								setPosition([newPos.lat, newPos.lng])
 								fetchAddress(newPos.lat, newPos.lng)
 							}
