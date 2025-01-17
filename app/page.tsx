@@ -111,21 +111,6 @@ export default function Home() {
 		}
 	}
 
-	const startNavigation = () => {
-		if (mapRef.current && position && destination) {
-			if (routingControlRef.current) {
-				mapRef.current.removeControl(routingControlRef.current) // Remove any existing route
-			}
-
-			routingControlRef.current = L.Routing.control({
-				waypoints: [L.latLng(position[0], position[1]), L.latLng(destination[0], destination[1])],
-				routeWhileDragging: true,
-				show: true,
-				lineOptions: { styles: [{ color: "blue", weight: 4 }] }
-			}).addTo(mapRef.current) // Add the routing control to the map
-		}
-	}
-
 	useEffect(() => {
 		// Dynamically import Leaflet on the client side
 		async function loadLeaflet() {
@@ -185,33 +170,11 @@ export default function Home() {
 						placeholder="Search for a location"
 						className="p-2 border border-gray-300 rounded-lg text-sm text-gray-800 outline-none focus:ring-2 focus:ring-blue-500"
 					/>
-					{/* <button
+					<button
 						onClick={handleSearch}
 						className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
 					>
 						Search
-					</button> */}
-				</div>
-
-				<div className="flex items-center space-x-2">
-					{/* Destination Input */}
-					<input
-						type="text"
-						placeholder="Enter destination"
-						onChange={(e) => {
-							const [lat, lon] = e.target.value.split(",").map((v) => parseFloat(v.trim()))
-							if (!isNaN(lat) && !isNaN(lon)) {
-								setDestination([lat, lon])
-							}
-						}}
-						className="p-2 border border-gray-300 rounded-lg text-sm text-gray-800 outline-none focus:ring-2 focus:ring-blue-500"
-					/>
-					<button
-						onClick={startNavigation}
-						className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
-						disabled={!destination}
-					>
-						Start Navigation
 					</button>
 				</div>
 
