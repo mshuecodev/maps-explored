@@ -218,7 +218,18 @@ export default function Home() {
 						attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 						url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
 					/>
-					<Marker position={position}>
+					<Marker
+						position={position}
+						draggable={true}
+						eventHandlers={{
+							dragend: (event) => {
+								const marker = event.target
+								const newPos = marker.getLatLng()
+								setPosition([newPos.lat, newPos.lng])
+								fetchAddress(newPos.lat, newPos.lng)
+							}
+						}}
+					>
 						<Popup>{address}</Popup>
 					</Marker>
 				</MapContainer>
