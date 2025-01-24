@@ -338,7 +338,7 @@ const MapsPreview: React.FC = () => {
 			</div>
 
 			{/* Search bar for destination */}
-			<div className="absolute md:top-4 md:right-4 bottom-4 left-1/2 transform md:transform-none -translate-x-1/2 md:translate-x-0 z-[1000] bg-white shadow-lg rounded-lg p-2 flex flex-col space-y-2 w-11/12 md:w-1/2 lg:w-1/3 md:h-fit">
+			<div className="absolute md:top-4 md:right-4 bottom-4 left-1/2 transform -translate-x-1/2 md:translate-x-0 md:transform-none z-[1000] bg-white shadow-lg rounded-lg p-2 flex flex-col space-y-2 w-11/12 md:w-1/2 lg:w-1/3 md:h-fit">
 				<div className="flex items-center space-x-2">
 					<input
 						type="text"
