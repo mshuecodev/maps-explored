@@ -6,10 +6,11 @@ import { useEffect } from "react"
 const Dashboard: React.FC = () => {
 	const { user, loading, token, handleLogout } = useAuth()
 	const router = useRouter()
+	const basePath = process.env.NEXT_PUBLIC_BASE_PATH || ""
 
 	useEffect(() => {
 		if (!loading && !token) {
-			router.push("/login")
+			router.push(`${basePath}/login`)
 		}
 	}, [token, loading, router])
 

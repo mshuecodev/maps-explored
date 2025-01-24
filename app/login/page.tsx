@@ -8,13 +8,18 @@ const Login: React.FC = () => {
 	const [password, setPassword] = useState("")
 	const router = useRouter()
 	const { login, token, loading, loginWithGoogle } = useAuth()
+	const basePath = process.env.NEXT_PUBLIC_BASE_PATH || ""
+
+	const pushToDashboard = () => {
+		router.push(`${basePath}/dashboard`)
+	}
 
 	const handleLogin = async (e: React.FormEvent) => {
 		e.preventDefault()
 		try {
 			await login(email, password)
 			console.log("Login successful, pushing to dashboard...")
-			router.push("/dashboard")
+			pushToDashboard()
 		} catch (error) {
 			console.error("Login failed:", error)
 		}
@@ -24,7 +29,7 @@ const Login: React.FC = () => {
 		try {
 			await loginWithGoogle()
 			console.log("Google login successful, pushing to dashboard...")
-			router.push("/dashboard")
+			pushToDashboard()
 		} catch (error) {
 			console.error("Google login failed:", error)
 		}
@@ -33,7 +38,7 @@ const Login: React.FC = () => {
 	useEffect(() => {
 		if (token) {
 			console.log("Token exists, redirecting to dashboard...")
-			router.push("/dashboard")
+			pushToDashboard()
 		}
 	}, [token, router])
 

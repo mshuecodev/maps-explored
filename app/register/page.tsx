@@ -8,13 +8,18 @@ const Register: React.FC = () => {
 	const [password, setPassword] = useState("")
 	const router = useRouter()
 	const { handleRegister, token, loading } = useAuth()
+	const basePath = process.env.NEXT_PUBLIC_BASE_PATH || ""
+
+	const pushToDashboard = () => {
+		router.push(`${basePath}/dashboard`)
+	}
 
 	const handleRegisterSubmit = async (e: React.FormEvent) => {
 		e.preventDefault()
 		try {
 			await handleRegister(email, password)
 			console.log("Registration successful, pushing to dashboard...")
-			router.push("/dashboard")
+			pushToDashboard()
 		} catch (error) {
 			console.error("Registration failed:", error)
 		}
@@ -23,7 +28,7 @@ const Register: React.FC = () => {
 	useEffect(() => {
 		if (token) {
 			console.log("Token exists, redirecting to dashboard...")
-			router.push("/dashboard")
+			pushToDashboard()
 		}
 	}, [token, router])
 
