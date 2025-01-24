@@ -10,7 +10,8 @@ const Dashboard: React.FC = () => {
 
 	useEffect(() => {
 		if (!loading && !token) {
-			router.push(`${basePath}/login`)
+			// router.push(`${basePath}/login`)
+			router.push(`/login`)
 		}
 	}, [token, loading, router])
 

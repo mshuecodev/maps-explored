@@ -14,7 +14,8 @@ export default function Home() {
 
 	useEffect(() => {
 		if (!loading && !token) {
-			router.push(`${basePath}/login`)
+			// router.push(`${basePath}/login`)
+			router.push(`/login`)
 		}
 	}, [token, loading, router])
 
