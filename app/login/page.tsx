@@ -90,7 +90,7 @@ const Login: React.FC = () => {
 				</button>
 				<p className="mt-4 text-gray-600">Don't have an account?</p>
 				<a
-					href="/register"
+					href={`${basePath}/register`}
 					className="w-full mt-4 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition inline-block text-center"
 				>
 					Register

@@ -3,6 +3,7 @@ import { useAuth } from "@/app/context/AuthContex"
 
 export default function Home() {
 	const { user, loading, token } = useAuth()
+	const basePath = process.env.NEXT_PUBLIC_BASE_PATH || ""
 
 	const handleSignOut = async () => {
 		try {
@@ -45,7 +46,7 @@ export default function Home() {
 								Sign Out
 							</button>
 							<a
-								href="/dashboard"
+								href={`${basePath}/dasdhboard`}
 								className="mt-6 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition inline-block text-center"
 							>
 								Dashboard
@@ -57,13 +58,13 @@ export default function Home() {
 						<p className="mt-4 text-gray-600">This is the home page.</p>
 						<div className="mt-6 flex justify-center space-x-4">
 							<a
-								href="/login"
+								href={`${basePath}/login`}
 								className="px-6 py-3 bg-white text-blue-500 border border-blue-500 rounded-lg hover:bg-blue-500 hover:text-white transition"
 							>
 								Login
 							</a>
 							<a
-								href="/register"
+								href={`${basePath}/register`}
 								className="px-6 py-3 bg-white text-purple-500 border border-purple-500 rounded-lg hover:bg-purple-500 hover:text-white transition"
 							>
 								Register

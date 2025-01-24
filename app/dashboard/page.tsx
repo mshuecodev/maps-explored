@@ -67,7 +67,7 @@ const Dashboard: React.FC = () => {
 							<ul className="list-disc list-inside">
 								<li>
 									<a
-										href="/maps"
+										href={`${basePath}/maps`}
 										className="text-blue-500 hover:underline"
 									>
 										Maps
