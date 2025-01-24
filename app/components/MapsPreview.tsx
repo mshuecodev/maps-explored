@@ -375,19 +375,12 @@ const MapsPreview: React.FC = () => {
 				</button>
 
 				{/* Loading Spinner */}
-				{isLoading && (
+				{isLoading ? (
 					<div className="mt-2 flex items-center justify-center text-gray-500">
 						<div className="animate-spin rounded-full h-5 w-5 border-t-2 border-blue-500 border-opacity-75"></div>
 						<span className="ml-2 text-sm">Loading...</span>
 					</div>
-				)}
-
-				{/* Show message when no suggestions found */}
-				{currentSuggestions.length === 0 && currentInput && !isLoading && (
-					<ul className="mt-2 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
-						<li className="p-2 text-gray-500 text-center">No location found</li>
-					</ul>
-				)}
+				) : null}
 			</div>
 
 			{currentLocation && (
