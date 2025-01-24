@@ -166,6 +166,18 @@ const MapsPreview: React.FC = () => {
 		}
 	}
 
+	const updateAddress = async (lat: number, lon: number, isCurrent: boolean) => {
+		const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`)
+		const data = await response.json()
+		if (data && data.display_name) {
+			if (isCurrent) {
+				setCurrentInput(data.display_name)
+			} else {
+				setDestinationInput(data.display_name)
+			}
+		}
+	}
+
 	// Function to recenter the map
 	const recenterMap = () => {
 		if (mapRef.current && currentLocation) {
@@ -400,11 +412,12 @@ const MapsPreview: React.FC = () => {
 								const newPos = marker.getLatLng()
 
 								setCurrentLocation([newPos.lat, newPos.lng])
-								fetchAddress(newPos.lat, newPos.lng)
+								// fetchAddress(newPos.lat, newPos.lng)
+								updateAddress(newPos.lat, newPos.lng, true)
 							}
 						}}
 					>
-						<Popup>{address}</Popup>
+						<Popup>{currentInput}</Popup>
 					</Marker>
 
 					{/* Current Destination Marker */}
@@ -419,11 +432,12 @@ const MapsPreview: React.FC = () => {
 									const newPos = marker.getLatLng()
 
 									setDestination([newPos.lat, newPos.lng])
-									fetchAddress(newPos.lat, newPos.lng)
+									updateAddress(newPos.lat, newPos.lng, false)
+									// fetchAddress(newPos.lat, newPos.lng)
 								}
 							}}
 						>
-							<Popup>{address}</Popup>
+							<Popup>{destinationInput}</Popup>
 						</Marker>
 					)}
 
