@@ -11,7 +11,8 @@ const Login: React.FC = () => {
 	const basePath = process.env.NEXT_PUBLIC_BASE_PATH || ""
 
 	const pushToDashboard = () => {
-		router.push(`${basePath}/dashboard`)
+		// router.push(`${basePath}/dashboard`)
+		router.push(`/dashboard`)
 	}
 
 	const handleLogin = async (e: React.FormEvent) => {
