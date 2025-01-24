@@ -317,14 +317,14 @@ const MapsPreview: React.FC = () => {
 				</div>
 			)}
 			{/* Search bar for destination */}
-			<div className="absolute top-4 left-20 z-[1000] bg-white shadow-lg rounded-lg p-2 flex flex-col space-y-2">
+			<div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-white shadow-lg rounded-lg p-2 flex flex-col space-y-2 w-full md:w-1/2 lg:w-1/3">
 				<div className="flex items-center space-x-2">
 					<input
 						type="text"
 						value={currentInput}
 						onChange={(e) => handleInputChange(e, true)} //value, current location
 						placeholder="Search current location"
-						className="p-2 border border-gray-300 rounded-lg text-sm text-gray-800 outline-none focus:ring-2 focus:ring-blue-500"
+						className="p-2 border border-gray-300 rounded-lg text-sm text-gray-800 outline-none focus:ring-2 focus:ring-blue-500 w-full"
 					/>
 				</div>
 
@@ -334,7 +334,7 @@ const MapsPreview: React.FC = () => {
 						placeholder="Search destination"
 						value={destinationInput}
 						onChange={(e) => handleInputChange(e, false)}
-						className="p-2 border border-gray-300 rounded-lg text-sm text-gray-800 outline-none focus:ring-2 focus:ring-blue-500"
+						className="p-2 border border-gray-300 rounded-lg text-sm text-gray-800 outline-none focus:ring-2 focus:ring-blue-500 w-full"
 					/>
 				</div>
 
