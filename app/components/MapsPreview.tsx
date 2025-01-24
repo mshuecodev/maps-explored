@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from "react"
 import dynamic from "next/dynamic"
 import { LatLngTuple } from "leaflet"
 import proj4 from "proj4"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/app/context/AuthContex"
 
 const MapContainer = dynamic(() => import("react-leaflet").then((mod) => mod.MapContainer), { ssr: false })
 const TileLayer = dynamic(() => import("react-leaflet").then((mod) => mod.TileLayer), { ssr: false })
@@ -38,6 +40,8 @@ const MapsPreview: React.FC = () => {
 
 	const debounceTimer = useRef<NodeJS.Timeout>(null) // Ref to store the debounce timer
 	const routingControlRef = useRef<any>(null)
+	const router = useRouter()
+	const { handleLogout } = useAuth()
 
 	const convertCoordinates = (x: number, y: number): LatLngTuple => {
 		// Convert UTM coordinates to latitude and longitude
@@ -316,8 +320,25 @@ const MapsPreview: React.FC = () => {
 					</button>
 				</div>
 			)}
+
+			{/* Back and Logout buttons */}
+			<div className="absolute top-4 left-4 z-[1000] space-x-2 hidden md:flex">
+				<button
+					className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition"
+					onClick={() => router.back()}
+				>
+					Back
+				</button>
+				<button
+					onClick={handleLogout}
+					className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+				>
+					Logout
+				</button>
+			</div>
+
 			{/* Search bar for destination */}
-			<div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-white shadow-lg rounded-lg p-2 flex flex-col space-y-2 w-full md:w-1/2 lg:w-1/3">
+			<div className="absolute md:top-4 md:right-4 bottom-4 left-1/2 transform md:transform-none -translate-x-1/2 md:translate-x-0 z-[1000] bg-white shadow-lg rounded-lg p-2 flex flex-col space-y-2 w-11/12 md:w-1/2 lg:w-1/3 md:h-fit">
 				<div className="flex items-center space-x-2">
 					<input
 						type="text"

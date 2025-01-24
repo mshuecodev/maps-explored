@@ -31,22 +31,8 @@ export default function Home() {
 
 	return (
 		<main className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-r from-blue-500 to-purple-600">
-			<div className="w-full ">
-				<div className="text-center p-8 bg-white rounded-lg shadow-lg">
-					<div className="flex justify-between mb-4">
-						<button
-							onClick={() => router.back()}
-							className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition"
-						>
-							Back
-						</button>
-						<button
-							onClick={handleLogout}
-							className="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
-						>
-							Logout
-						</button>
-					</div>
+			<div className="w-full h-full">
+				<div className="w-full h-full">
 					<MapsPreview />
 				</div>
 			</div>
