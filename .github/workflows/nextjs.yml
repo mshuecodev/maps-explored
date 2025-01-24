@@ -83,7 +83,9 @@ jobs:
                   echo "NEXT_PUBLIC_FIREBASE_APP_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}" >> .env
                   echo "NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}" >> .env
             - name: Build with Next.js
-              run: ${{ steps.detect-package-manager.outputs.runner }} next build
+              run: |
+              export NEXT_PUBLIC_BASE_PATH="/maps-explored"
+              ${{ steps.detect-package-manager.outputs.runner }} next build
             - name: Upload artifact
               uses: actions/upload-pages-artifact@v3
               with:
