@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react"
 import dynamic from "next/dynamic"
 import { LatLngTuple } from "leaflet"
+import proj4 from "proj4"
 
 const MapContainer = dynamic(() => import("react-leaflet").then((mod) => mod.MapContainer), { ssr: false })
 const TileLayer = dynamic(() => import("react-leaflet").then((mod) => mod.TileLayer), { ssr: false })
@@ -12,6 +13,9 @@ import { decodePolyline } from "@/app/utils/decodePolyline"
 let L: any // Declare Leaflet as a lazy-loaded variable
 
 const defaultPosition: LatLngTuple = [51.505, -0.09]
+
+// Define the UTM projection (example for UTM zone 33N)
+const utmProjection = "+proj=utm +zone=33 +datum=WGS84 +units=m +no_defs"
 
 const MapsPreview: React.FC = () => {
 	const [currentLocation, setCurrentLocation] = useState<LatLngTuple | null>(null)
@@ -28,11 +32,19 @@ const MapsPreview: React.FC = () => {
 
 	const [isLoading, setIsLoading] = useState<boolean>(false)
 	const [zoomLevel, setZoomLevel] = useState<number>(15)
+	const [error, setError] = useState<string | null>(null)
 
 	const mapRef = useRef<any>(null) // Reference to the map
 
 	const debounceTimer = useRef<NodeJS.Timeout>(null) // Ref to store the debounce timer
 	const routingControlRef = useRef<any>(null)
+
+	const convertCoordinates = (x: number, y: number): LatLngTuple => {
+		// Convert UTM coordinates to latitude and longitude
+		const [longitude, latitude] = proj4(utmProjection, "WGS84", [x, y])
+		return [latitude, longitude]
+	}
+
 	// Handle the search query input
 	const handleSearch = async () => {
 		if (currentInput) {
@@ -91,6 +103,9 @@ const MapsPreview: React.FC = () => {
 	// select location
 	const handleLocationSelect = (item: any, isCurrent: boolean) => {
 		const newPosition: LatLngTuple = [parseFloat(item.lat), parseFloat(item.lon)]
+
+		// const [latitude, longitude] = convertCoordinates(item.x, item.y)
+		// const newPosition: LatLngTuple = [latitude, longitude]
 
 		if (isCurrent) {
 			setCurrentLocation(newPosition)
@@ -187,53 +202,6 @@ const MapsPreview: React.FC = () => {
 		}
 	}
 
-	useEffect(() => {
-		// Dynamically import Leaflet on the client side
-		async function loadLeaflet() {
-			const leaflet = await import("leaflet")
-			L = leaflet // Assign to the lazy-loaded variable
-
-			// Fix the default marker icon paths
-			L.Icon.Default.mergeOptions({
-				iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-				iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-				shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png"
-			})
-		}
-		loadLeaflet()
-
-		// Use the Geolocation API to get the current position
-		if (typeof window !== "undefined" && navigator.geolocation) {
-			// Options to improve accuracy
-			const geolocationOptions = {
-				enableHighAccuracy: true, // Use high-accuracy location
-				timeout: 10000, // Maximum time to wait for location (10 seconds)
-				maximumAge: 0 // Prevent using cached location data
-			}
-
-			// Use the Geolocation API to get the current position
-			if (navigator.geolocation) {
-				navigator.geolocation.getCurrentPosition(
-					(location) => {
-						const { latitude, longitude } = location.coords
-						setCurrentLocation([latitude, longitude]) // Update the state with the current location
-						fetchAddress(latitude, longitude) // Fetch the address
-					},
-					(error) => {
-						console.error("Error getting location:", error)
-						setCurrentLocation(defaultPosition) // Fallback to a default position
-						fetchAddress(defaultPosition[0], defaultPosition[1]) // Fetch address for the default position
-					},
-					geolocationOptions // Pass the options to improve accuracy
-				)
-			} else {
-				console.error("Geolocation is not supported by this browser.")
-				setCurrentLocation(defaultPosition) // Fallback to a default position
-				fetchAddress(defaultPosition[0], defaultPosition[1])
-			}
-		}
-	}, [])
-
 	async function fetchRoute() {
 		if (currentLocation && destination) {
 			try {
@@ -254,6 +222,65 @@ const MapsPreview: React.FC = () => {
 		}
 	}
 
+	const requestLocationPermission = () => {
+		// Use the Geolocation API to get the current position
+		if (typeof window !== "undefined" && navigator.geolocation) {
+			// Options to improve accuracy
+			const geolocationOptions = {
+				enableHighAccuracy: true, // Use high-accuracy location
+				timeout: 10000, // Maximum time to wait for location (10 seconds)
+				maximumAge: 0 // Prevent using cached location data
+			}
+
+			// Use the Geolocation API to get the current position
+			navigator.geolocation.getCurrentPosition(
+				(location) => {
+					const { latitude, longitude, accuracy } = location.coords
+					// const newLocation: LatLngTuple = convertCoordinates(latitude, longitude)
+					const newLocation: LatLngTuple = [latitude, longitude]
+					setCurrentLocation(newLocation) // Update the state with the current location
+					fetchAddress(latitude, longitude) // Fetch the address
+					setError(null)
+					if (mapRef.current) {
+						mapRef.current.setView(newLocation, zoomLevel) // Zoom and focus on the current location
+					}
+					console.log(`Location accuracy: ${accuracy} meters`)
+				},
+				(error) => {
+					console.error("Error getting location:", error)
+					setCurrentLocation(defaultPosition) // Fallback to a default position
+					fetchAddress(defaultPosition[0], defaultPosition[1]) // Fetch address for the default position
+					setError("Error getting location: user denied geolocation")
+				},
+				geolocationOptions // Pass the options to improve accuracy
+			)
+		} else {
+			console.error("Geolocation is not supported by this browser.")
+			setCurrentLocation(defaultPosition) // Fallback to a default position
+			fetchAddress(defaultPosition[0], defaultPosition[1])
+			setError("Geolocation is not supported by this browser.") // Set error message
+		}
+	}
+
+	useEffect(() => {
+		// Dynamically import Leaflet on the client side
+		async function loadLeaflet() {
+			const leaflet = await import("leaflet")
+			L = leaflet // Assign to the lazy-loaded variable
+
+			// Fix the default marker icon paths
+			L.Icon.Default.mergeOptions({
+				iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+				iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+				shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png"
+			})
+		}
+		loadLeaflet()
+
+		// Request permissions and get the current position
+		requestLocationPermission()
+	}, [])
+
 	useEffect(() => {
 		if (mapRef.current && currentLocation && destination) {
 			const bounds = L.latLngBounds([currentLocation, destination])
@@ -265,6 +292,18 @@ const MapsPreview: React.FC = () => {
 
 	return (
 		<div className="relative w-full h-screen">
+			{error && (
+				<div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-white shadow-lg rounded-lg p-4">
+					<p className="text-red-500">{error}</p>
+					<p className="text-gray-600">Please enable location services in your browser settings and try again.</p>
+					<button
+						onClick={requestLocationPermission}
+						className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+					>
+						Retry Location Access
+					</button>
+				</div>
+			)}
 			{/* Search bar for destination */}
 			<div className="absolute top-4 left-20 z-[1000] bg-white shadow-lg rounded-lg p-2 flex flex-col space-y-2">
 				<div className="flex items-center space-x-2">
@@ -341,7 +380,6 @@ const MapsPreview: React.FC = () => {
 
 			{currentLocation && (
 				<MapContainer
-					// key={currentLocation?.join(",")} // Use the currentLocation to generate a unique key
 					center={currentLocation || defaultPosition}
 					zoom={zoomLevel} // Increase zoom level for better accuracy
 					scrollWheelZoom={true}
