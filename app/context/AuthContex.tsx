@@ -12,6 +12,7 @@ interface AuthContextProps {
 	handleLogout: () => Promise<void>
 	handleRegister: (email: string, password: string) => Promise<void>
 	loginWithGoogle: () => Promise<void>
+	registerWithGoogle: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextProps>({
@@ -21,7 +22,8 @@ const AuthContext = createContext<AuthContextProps>({
 	login: async () => {},
 	handleLogout: async () => {},
 	handleRegister: async () => {},
-	loginWithGoogle: async () => {}
+	loginWithGoogle: async () => {},
+	registerWithGoogle: async () => {}
 })
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -51,7 +53,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 	}
 
 	const handleRegister = async (email: string, password: string) => {
+		// Password validation
+		const passwordPolicy = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
+		if (!passwordPolicy.test(password)) {
+			throw new Error("Password must be at least 8 characters long, include an uppercase letter, a lowercase letter, a number, and a special character.")
+		}
+
 		const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+		const user = userCredential.user
+		const token = await getIdToken(userCredential.user)
+
+		// Save user details to Firestore
+		await setDoc(doc(db, "users", user.uid), {
+			email: user.email,
+			uid: user.uid,
+			createdAt: new Date().toISOString(),
+			// Add custom fields
+			role: "user", // Default role
+			active: true // Default account status
+		})
+		setUser(user)
+		setToken(token)
+	}
+
+	const registerWithGoogle = async () => {
+		const userCredential = await signInWithPopup(auth, googleProvider)
 		const user = userCredential.user
 		const token = await getIdToken(userCredential.user)
 
@@ -118,7 +144,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 		return () => clearInterval(interval)
 	}, [user])
 
-	return <AuthContext.Provider value={{ user, loading, token, login, handleRegister, handleLogout, loginWithGoogle }}>{children}</AuthContext.Provider>
+	return <AuthContext.Provider value={{ user, loading, token, login, handleRegister, handleLogout, loginWithGoogle, registerWithGoogle }}>{children}</AuthContext.Provider>
 }
 
 export const useAuth = () => useContext(AuthContext)

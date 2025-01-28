@@ -6,9 +6,19 @@ import { useAuth } from "@/app/context/AuthContex"
 const Register: React.FC = () => {
 	const [email, setEmail] = useState("")
 	const [password, setPassword] = useState("")
+	const [error, setError] = useState<string | null>(null)
 	const router = useRouter()
-	const { handleRegister, token, loading } = useAuth()
+	const { handleRegister, token, loading, registerWithGoogle } = useAuth()
 	const basePath = process.env.NEXT_PUBLIC_BASE_PATH || ""
+
+	const handleGoogleRegister = async () => {
+		try {
+			await registerWithGoogle()
+			pushToDashboard()
+		} catch (error: any) {
+			setError(error.message)
+		}
+	}
 
 	const pushToDashboard = () => {
 		// router.push(`${basePath}/dashboard`)
@@ -19,10 +29,11 @@ const Register: React.FC = () => {
 		e.preventDefault()
 		try {
 			await handleRegister(email, password)
-			console.log("Registration successful, pushing to dashboard...")
+
 			pushToDashboard()
-		} catch (error) {
-			console.error("Registration failed:", error)
+		} catch (error: any) {
+			console.log("Register failed:", error)
+			setError(error.message)
 		}
 	}
 
@@ -47,6 +58,7 @@ const Register: React.FC = () => {
 		<main className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-500 to-purple-600">
 			<div className="text-center p-8 bg-white rounded-lg shadow-lg w-full max-w-md">
 				<h1 className="text-4xl font-extrabold text-gray-800 mb-6">Register</h1>
+				{error && <p className="text-red-500 mb-4">{error}</p>}
 				<form
 					onSubmit={handleRegisterSubmit}
 					className="space-y-4"
@@ -73,6 +85,12 @@ const Register: React.FC = () => {
 					</button>
 				</form>
 				<p className="mt-4 text-gray-600">Already have an account?</p>
+				<button
+					onClick={handleGoogleRegister}
+					className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+				>
+					Continue with Google
+				</button>
 				<a
 					href={`${basePath}/login`}
 					className="w-full mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition inline-block text-center"
