@@ -1,7 +1,8 @@
 "use client"
 import React, { createContext, useContext, useState, useEffect } from "react"
 import { User, onIdTokenChanged, getIdToken, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, signInWithPopup } from "firebase/auth"
-import { auth, googleProvider } from "@/app/firebase/clientApp"
+import { auth, googleProvider, db } from "@/app/firebase/clientApp"
+import { getFirestore, doc, setDoc } from "firebase/firestore"
 
 interface AuthContextProps {
 	user: User | null
@@ -51,8 +52,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 	const handleRegister = async (email: string, password: string) => {
 		const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+		const user = userCredential.user
 		const token = await getIdToken(userCredential.user)
-		setUser(userCredential.user)
+
+		// Save user details to Firestore
+		await setDoc(doc(db, "users", user.uid), {
+			email: user.email,
+			uid: user.uid,
+			createdAt: new Date().toISOString(),
+			// Add custom fields
+			role: "user", // Default role
+			active: true // Default account status
+		})
+		setUser(user)
 		setToken(token)
 	}
 
