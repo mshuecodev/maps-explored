@@ -36,7 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 		setToken(token)
 	}
 
-	const login = async (email: string, password: string): Promise<string | null> => {
+	const login = async (email: string, password: string) => {
 		try {
 			const userCredential = await signInWithEmailAndPassword(auth, email, password)
 
