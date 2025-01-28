@@ -1,6 +1,6 @@
 "use client"
 import React, { createContext, useContext, useState, useEffect } from "react"
-import { User, onIdTokenChanged, getIdToken, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, signInWithPopup } from "firebase/auth"
+import { User, onAuthStateChanged, getIdToken, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, signInWithPopup, sendEmailVerification, fetchSignInMethodsForEmail } from "firebase/auth"
 import { auth, googleProvider, db } from "@/app/firebase/clientApp"
 import { getFirestore, doc, setDoc } from "firebase/firestore"
 
@@ -53,15 +53,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 	}
 
 	const handleRegister = async (email: string, password: string) => {
+		// Email validation
+		const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+		if (!emailPattern.test(email)) {
+			throw new Error("Invalid email format.")
+		}
+
 		// Password validation
 		const passwordPolicy = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
 		if (!passwordPolicy.test(password)) {
 			throw new Error("Password must be at least 8 characters long, include an uppercase letter, a lowercase letter, a number, and a special character.")
 		}
 
+		// Check if the email is already registered
+		const signInMethods = await fetchSignInMethodsForEmail(auth, email)
+		if (signInMethods.length > 0) {
+			throw new Error("This email is already registered. Please use a different email.")
+		}
+
 		const userCredential = await createUserWithEmailAndPassword(auth, email, password)
 		const user = userCredential.user
 		const token = await getIdToken(userCredential.user)
+
+		// Send email verification
+		await sendEmailVerification(user)
 
 		// Save user details to Firestore
 		await setDoc(doc(db, "users", user.uid), {
@@ -121,7 +136,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 	}, [user])
 
 	useEffect(() => {
-		const unsubscribe = onIdTokenChanged(auth, async (user) => {
+		const unsubscribe = onAuthStateChanged(auth, async (user) => {
+			console.log("User state changed:", user)
 			setUser(user)
 			setLoading(false)
 			if (user) {
