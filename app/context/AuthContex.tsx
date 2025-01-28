@@ -36,17 +36,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 		setToken(token)
 	}
 
-	const login = async (email: string, password: string) => {
-		const userCredential = await signInWithEmailAndPassword(auth, email, password)
+	const login = async (email: string, password: string): Promise<string | null> => {
+		try {
+			const userCredential = await signInWithEmailAndPassword(auth, email, password)
 
-		const token = await getIdToken(userCredential.user)
-		setUser(userCredential.user)
-		setToken(token)
+			const token = await getIdToken(userCredential.user)
+			setUser(userCredential.user)
+			setToken(token)
+		} catch (error: any) {
+			// Throw the error for the caller to handle
+			throw new Error(error.message)
+		}
 	}
 
 	const handleRegister = async (email: string, password: string) => {
 		const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-		console.log("User registered:", userCredential.user)
 		const token = await getIdToken(userCredential.user)
 		setUser(userCredential.user)
 		setToken(token)

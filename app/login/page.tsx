@@ -6,6 +6,7 @@ import { useAuth } from "@/app/context/AuthContex"
 const Login: React.FC = () => {
 	const [email, setEmail] = useState("")
 	const [password, setPassword] = useState("")
+	const [error, setError] = useState<string | null>(null)
 	const router = useRouter()
 	const { login, token, loading, loginWithGoogle } = useAuth()
 	const basePath = process.env.NEXT_PUBLIC_BASE_PATH || ""
@@ -19,10 +20,11 @@ const Login: React.FC = () => {
 		e.preventDefault()
 		try {
 			await login(email, password)
-			console.log("Login successful, pushing to dashboard...")
+
 			pushToDashboard()
-		} catch (error) {
+		} catch (error: any) {
 			console.error("Login failed:", error)
+			setError(error.message)
 		}
 	}
 
@@ -57,6 +59,7 @@ const Login: React.FC = () => {
 		<main className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-500 to-purple-600">
 			<div className="text-center p-8 bg-white rounded-lg shadow-lg w-full max-w-md">
 				<h1 className="text-4xl font-extrabold text-gray-800 mb-6">Login</h1>
+				{error && <p className="text-red-500 mb-4">{error}</p>}
 				<form
 					onSubmit={handleLogin}
 					className="space-y-4"
